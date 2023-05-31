@@ -75,3 +75,9 @@ let cid = cid::CidGeneric::<69>::new_v1(RAW, mhash);  // <== this is the importa
 
 println!("{:?}", mhash);
 ```
+
+## Test
+
+```bash
+cargo test
+```
