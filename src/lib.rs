@@ -54,61 +54,28 @@ mod tests {
     #[test]
     fn test_shake_256_48() {
         let mhash = super::Code::Shake256_48.digest(INPUT);
-        eprintln!("{:?}", mhash);
+        assert_eq!(mhash.digest().len(), super::SHAKE_256_48_LEN);
+        assert_eq!(mhash.size(), super::SHAKE_256_48_LEN as u8);
 
         // use the mhash to create a cid, just for fun
         let cid = cid::Cid::new_v1(RAW, mhash);
 
-        eprintln!(
-            "Cid: {}",
-            cid.to_string_of_base(Base::Base36Lower)
-                .expect("proper encoding")
-        );
+        eprintln!("Cid: {}", cid.to_string_of_base(Base::Base36Lower).unwrap());
 
         let field_element_from_mhash = FieldElement::from_bytes(mhash.digest()).unwrap();
-        println!(
-            "[{:?}] {:?}",
-            mhash.digest().len(),
-            hex::encode(mhash.digest())
-        );
-        eprintln!("mhash fe: {:?}", field_element_from_mhash);
-        assert_eq!(mhash.size(), super::SHAKE_256_48_LEN as u8);
 
         // assert same as FieldElement::from_msg_hash(input)
         let straight_outta_input = FieldElement::from_msg_hash(INPUT);
-        println!(
-            "[{:?}] {:?}",
-            straight_outta_input.to_bytes().len(),
-            hex::encode(straight_outta_input.to_bytes())
-        );
-        assert_eq!(
-            straight_outta_input.to_bytes().len(),
-            super::SHAKE_256_48_LEN
-        );
         assert_eq!(field_element_from_mhash, straight_outta_input);
     }
 
     #[test]
     fn test_128_48() {
         let mhash = super::Code::Shake128_48.digest(INPUT);
-        eprintln!("{:?}", mhash);
 
         // use the mhash to create a cid, just for fun
-        let cid = cid::Cid::new_v1(RAW, mhash);
+        let _cid = cid::Cid::new_v1(RAW, mhash);
 
-        eprintln!(
-            "Cid: {}",
-            cid.to_string_of_base(Base::Base58Btc)
-                .expect("proper encoding")
-        );
-
-        let field_element_from_mhash = FieldElement::from_bytes(mhash.digest()).unwrap();
-        println!(
-            "[{:?}] {:?}",
-            mhash.digest().len(),
-            hex::encode(mhash.digest())
-        );
-        eprintln!("mhash fe: {:?}", field_element_from_mhash);
         assert_eq!(mhash.size(), super::SHAKE_128_48_LEN as u8);
     }
 }

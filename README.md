@@ -11,7 +11,12 @@ use multihash::MultihashDigest;
 let data = b"shake, shake, shake... shake shake shake... shake your booty!";
 let mhash = Code::Shake256_48.digest(data);
 
-println!("{:?}", mhash);
+// perhaps use it to make a CID
+
+const RAW: u64 = 0x55;
+let cid = cid::Cid::new_v1(RAW, mhash);
+
+println!("{:?}", cid);
 ```
 
 ## Custom Length Usage
