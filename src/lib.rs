@@ -5,6 +5,7 @@
 //! outside of this crate an integrate it in your own custom code table.
 
 use multihash::derive::Multihash;
+use sha3::digest::{ExtendableOutput, Update, XofReader};
 
 // contains the derive macro
 pub mod hasher_impl;
@@ -42,6 +43,19 @@ mod shake {
     crate::derive_rustcrypto_shaker!(::sha3::Shake256, Shake256_48, super::SHAKE_256_48_LEN);
 }
 
+pub fn shake256_mhash(
+    input: &[u8],
+    output_buffer: &mut [u8],
+) -> Result<multihash::MultihashGeneric<64>, multihash::Error> {
+    // generate SHAKE digest
+    let mut hasher = sha3::Shake256::default();
+    hasher.update(input);
+    let mut reader = hasher.finalize_xof();
+    reader.read(output_buffer);
+
+    Multihash::wrap(SHAKE_256_HASH_CODE, output_buffer)
+}
+
 #[cfg(test)]
 mod tests {
     use amcl_wrapper::field_elem::FieldElement;
@@ -56,6 +70,9 @@ mod tests {
         let mhash = super::Code::Shake256_48.digest(INPUT);
         assert_eq!(mhash.digest().len(), super::SHAKE_256_48_LEN);
         assert_eq!(mhash.size(), super::SHAKE_256_48_LEN as u8);
+
+        // print mhash
+        eprintln!("mhash: {:X?}", mhash.digest());
 
         // use the mhash to create a cid, just for fun
         let cid = cid::Cid::new_v1(RAW, mhash);
@@ -77,5 +94,51 @@ mod tests {
         let _cid = cid::Cid::new_v1(RAW, mhash);
 
         assert_eq!(mhash.size(), super::SHAKE_128_48_LEN as u8);
+    }
+
+    #[test]
+    fn test_straight_impl() {
+        use super::SHAKE_256_HASH_CODE;
+
+        use multihash::Multihash;
+        use sha3::{
+            digest::{ExtendableOutput, Update, XofReader},
+            Shake256,
+        };
+
+        // generate SHAKE digest
+        let mut hasher = Shake256::default();
+        hasher.update(INPUT);
+        let mut reader = hasher.finalize_xof();
+        let mut digest = [0u8; 48];
+        reader.read(&mut digest);
+
+        let mhash = Multihash::wrap(SHAKE_256_HASH_CODE, &digest).unwrap();
+
+        // print mhash
+        eprintln!("mhash: {:X?}", mhash.digest());
+
+        let field_element_from_mhash = FieldElement::from_bytes(mhash.digest()).unwrap();
+        let field_element_from_digest = FieldElement::from_bytes(&digest).unwrap();
+
+        // assert same as FieldElement::from_msg_hash(input)
+        let straight_outta_input = FieldElement::from_msg_hash(INPUT);
+        assert_eq!(field_element_from_mhash, field_element_from_digest);
+        assert_eq!(field_element_from_mhash, straight_outta_input);
+    }
+
+    #[test]
+    fn test_shortcut() {
+        // use shake_mhash
+        let mut digest = [0u8; 48];
+        let mhash = super::shake256_mhash(INPUT, &mut digest).unwrap();
+
+        let field_element_from_mhash = FieldElement::from_bytes(mhash.digest()).unwrap();
+        let field_element_from_digest = FieldElement::from_bytes(&digest).unwrap();
+
+        // assert same as FieldElement::from_msg_hash(input)
+        let straight_outta_input = FieldElement::from_msg_hash(INPUT);
+        assert_eq!(field_element_from_mhash, field_element_from_digest);
+        assert_eq!(field_element_from_mhash, straight_outta_input);
     }
 }
