@@ -43,6 +43,18 @@ mod shake {
     crate::derive_rustcrypto_shaker!(::sha3::Shake256, Shake256_48, super::SHAKE_256_48_LEN);
 }
 
+pub fn shake128_mhash(
+    input: &[u8],
+    output_buffer: &mut [u8],
+) -> Result<multihash::MultihashGeneric<64>, multihash::Error> {
+    let mut hasher = sha3::Shake128::default();
+    hasher.update(input);
+    let mut reader = hasher.finalize_xof();
+    reader.read(output_buffer);
+
+    Multihash::wrap(SHAKE_128_HASH_CODE, output_buffer)
+}
+
 pub fn shake256_mhash(
     input: &[u8],
     output_buffer: &mut [u8],
@@ -129,9 +141,11 @@ mod tests {
 
     #[test]
     fn test_shortcut() {
-        // use shake_mhash
+        use super::*;
+
+        // test shake256_mhash
         let mut digest = [0u8; 48];
-        let mhash = super::shake256_mhash(INPUT, &mut digest).unwrap();
+        let mhash = shake256_mhash(INPUT, &mut digest).unwrap();
 
         let field_element_from_mhash = FieldElement::from_bytes(mhash.digest()).unwrap();
         let field_element_from_digest = FieldElement::from_bytes(&digest).unwrap();
@@ -140,5 +154,19 @@ mod tests {
         let straight_outta_input = FieldElement::from_msg_hash(INPUT);
         assert_eq!(field_element_from_mhash, field_element_from_digest);
         assert_eq!(field_element_from_mhash, straight_outta_input);
+
+        // test shake256_mhash
+        let mut digest = [0u8; 48];
+        let mhash = shake128_mhash(INPUT, &mut digest).unwrap();
+
+        // generate SHAKE digest
+        let mut hasher = sha3::Shake128::default();
+        hasher.update(INPUT);
+        let mut reader = hasher.finalize_xof();
+        let mut digest_2 = [0u8; 48];
+        reader.read(&mut digest_2);
+
+        // assert is same as digest_2
+        assert_eq!(mhash.digest(), digest_2);
     }
 }
