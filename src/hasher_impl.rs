@@ -1,4 +1,3 @@
-// #[cfg(any(feature = "shake"))]
 #[macro_export]
 macro_rules! derive_rustcrypto_shaker {
     ($module:ty, $name:ident, $size:expr) => {

@@ -17,11 +17,11 @@ const SHAKE_128_48_LEN: usize = 48;
 
 /// Multicodec for Shake128, see [multiformats/multicodec](https://github.com/multiformats/multicodec/blob/df81972d764f30da4ad32e1e5b778d8b619de477/table.csv#L15-L16) for details
 /// The code for shake-128 is hex 0x18, decimal 24
-pub const SHAKE_128_HASH_CODE: u64 = 24;
+pub const SHAKE_128_HASH_CODE: u64 = 0x18;
 
 /// Multicodec for Shake256, see [multiformats/multicodec](https://github.com/multiformats/multicodec/blob/df81972d764f30da4ad32e1e5b778d8b619de477/table.csv#L15-L16) for details
 /// The code for shake-256 is hex 0x19, decimal 25
-pub const SHAKE_256_HASH_CODE: u64 = 25;
+pub const SHAKE_256_HASH_CODE: u64 = 0x19;
 
 #[doc = include_str!("../README.md")]
 #[cfg(doctest)]
@@ -110,6 +110,9 @@ mod tests {
 
         eprintln!("Cid: {}", cid.to_string_of_base(Base::Base36Lower).unwrap());
 
+        // cid digest matches mhash
+        assert_eq!(cid.hash().digest(), mhash.digest());
+
         let field_element_from_mhash = FieldElement::from_bytes(mhash.digest()).unwrap();
 
         // assert same as FieldElement::from_msg_hash(input)
@@ -144,7 +147,7 @@ mod tests {
         let mut digest = [0u8; 48];
         reader.read(&mut digest);
 
-        let mhash = Multihash::wrap(SHAKE_256_HASH_CODE, &digest).unwrap();
+        let mhash: Multihash = Multihash::wrap(SHAKE_256_HASH_CODE, &digest).unwrap();
 
         // print mhash
         eprintln!("mhash: {:X?}", mhash.digest());
@@ -159,7 +162,7 @@ mod tests {
     }
 
     #[test]
-    fn test_shortcut() {
+    fn test_convenient_fns() {
         use super::*;
 
         // test shake256_mhash
@@ -187,5 +190,6 @@ mod tests {
 
         // assert is same as digest_2
         assert_eq!(mhash.digest(), digest_2);
+        assert_eq!(digest, digest_2);
     }
 }
