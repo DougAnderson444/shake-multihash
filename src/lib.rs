@@ -1,5 +1,5 @@
 //! The currently released rust-multihash version, is kind of "catch all" for all sorts of hash function.
-//! Current master has already split things into smaller pieces.
+//! Current `rust-multihash` master has already split things into smaller pieces.
 //!
 //! In theory it should be possible to implement other hash functions
 //! outside of this crate an integrate it in your own custom code table.
@@ -27,7 +27,7 @@ pub const SHAKE_256_HASH_CODE: u64 = 25;
 #[cfg(doctest)]
 pub struct ReadmeDoctests;
 
-/// Multicodec codes for Shake128 and Shake256 of lengths 48 bytes
+/// Illustrative purposes only, do not use. Multicodec codes for Shake128 and Shake256 of fixed lengths `48 bytes`
 #[derive(Clone, Copy, Debug, Eq, Multihash, PartialEq)]
 #[mh(alloc_size = 64)]
 pub enum Code {
@@ -38,11 +38,21 @@ pub enum Code {
     Shake256_48,
 }
 
+/// Illustrative purposes only, do not use. Multicodec codes for Shake128 and Shake256 of fixed lengths `48 bytes`
 mod shake {
     crate::derive_rustcrypto_shaker!(::sha3::Shake128, Shake128_48, super::SHAKE_128_48_LEN);
     crate::derive_rustcrypto_shaker!(::sha3::Shake256, Shake256_48, super::SHAKE_256_48_LEN);
 }
 
+/// Generate a SHAKE-128 multihash of any length, up to 64 bytes long
+///
+/// # Example
+/// ```
+/// use shake_multihash::shake128_mhash;
+/// const INPUT: &[u8] = b"shake, shake, shake... shake shake shake... shake your booty!";
+/// let mut sized_array = [0u8; 42];
+/// let mhash = shake128_mhash(INPUT, &mut sized_array).unwrap();
+/// ```
 pub fn shake128_mhash(
     input: &[u8],
     output_buffer: &mut [u8],
@@ -55,6 +65,15 @@ pub fn shake128_mhash(
     Multihash::wrap(SHAKE_128_HASH_CODE, output_buffer)
 }
 
+/// Generate a SHAKE-256 multihash of any length, up to 64 bytes long
+///
+/// # Example
+/// ```
+/// use shake_multihash::shake256_mhash;
+/// const INPUT: &[u8] = b"shake, shake, shake... shake shake shake... shake your booty!";
+/// let mut sized_array = [0u8; 42];
+/// let mhash = shake256_mhash(INPUT, &mut sized_array).unwrap();
+/// ```
 pub fn shake256_mhash(
     input: &[u8],
     output_buffer: &mut [u8],
